@@ -286,8 +286,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
       center
     );
 
-    const paddingTranslate =
-      this.zoomScale > 1 ? -1 * (this.zoomScale - 1) * this.paddingSize : (1 - this.zoomScale) * this.paddingSize;
+    const paddingTranslate = (1 - this.zoomScale) * this.paddingSize;
 
     debug(
       `!? scale: ${this.zoomScale}, padding: ${paddingTranslate}, newPos: ${newPos}, center: ${center}, ${this.canvasOffset}`
