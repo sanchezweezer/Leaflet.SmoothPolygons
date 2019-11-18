@@ -19,13 +19,16 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
   paddingSize: 128,
 
   // when to redraw polygons to get a new simplicized form
-  redrawScale: 100,
+  redrawScale: 300,
 
   // storage of all polygons for redraw
   paths: [],
 
   // original position (no offset) of the base layer
   _originPosition: {},
+
+  // central Point(<LatLng> latlng) of polygons
+  _position: {},
 
   _subtractPadding(point) {
     return new paper.Point(point).subtract(this.paddingSize);
@@ -48,6 +51,10 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         );
         return [viewPoint.x, viewPoint.y];
       });
+  },
+
+  _getPaddingOffsetObject: function() {
+    return { x: this.paddingSize, y: this.paddingSize };
   },
 
   _drawPolygon: function(polygon, centralPoint, pathOptions = {}) {
@@ -91,7 +98,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     outerPath.remove();
 
     // shift to canvas' padding
-    resultPath.translate({ x: this.paddingSize, y: this.paddingSize });
+    resultPath.translate(this._getPaddingOffsetObject());
 
     resultPath.fullySelected = false;
 
@@ -118,6 +125,14 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     };
 
     this._originPosition = paper.project.activeLayer.position.clone().add(this.canvasOffset);
+
+    // init position of controlled point (LatLng)
+    this._position = this._map.unproject(
+      this._map
+        .getPixelOrigin()
+        .add(this._originPosition)
+        .subtract(this._getPaddingOffsetObject())
+    );
 
     return resultPath;
   },
@@ -157,21 +172,15 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   _onFly: function({ event, parentEvent }) {
     debug(parentEvent + 'fly');
-    const center = this._map.getCenter();
-    const zoom = this._map.getZoom();
 
-    const currentCenterPoint = this._map.project(this._oldCenter, zoom);
-    const destCenterPoint = this._map.project(center, zoom);
-    const centerOffset = destCenterPoint.subtract(currentCenterPoint);
+    // newOriginPosition
+    const newOriginPosition = this._map
+      .project(this._position)
+      .subtract(this._map.getPixelOrigin())
+      .add(this._getPaddingOffsetObject());
 
-    const topLeftOffset = centerOffset.multiplyBy(-1 * this._scale);
-
-    paper.project.activeLayer.position = new paper.Point({
-      x: this._originPosition.x + topLeftOffset.x,
-      y: this._originPosition.y + topLeftOffset.y
-    });
-
-    this._oldCenter = this._map.getCenter();
+    paper.project.activeLayer.position = new paper.Point(newOriginPosition.subtract(this.canvasOffset));
+    this._originPosition = newOriginPosition;
   },
 
   _onMove: debounce(function(e) {
@@ -189,11 +198,9 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     // displacement of all polygons through the active layer
     // new paper.Path.Rectangle(paper.project.activeLayer.bounds);
     paper.project.activeLayer.position = new paper.Point({
-      x: this._originPosition.x + -1 * this.canvasOffset.x,
-      y: this._originPosition.y + -1 * this.canvasOffset.y
+      x: this._originPosition.x - this.canvasOffset.x,
+      y: this._originPosition.y - this.canvasOffset.y
     });
-
-    this._oldCenter = this._map.getCenter();
     debug('move end');
   }, DEBOUNCE_TIME),
 
@@ -207,7 +214,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     // if the card has resized, then setting the new canvas size
     if (this._canvas.width !== size.x + this.paddingSize * 2) {
       debug('resize x');
-      this._canvas.width = size.x + this.paddingSize * 2;
       this._canvas.width = size.x + this.paddingSize * 2;
       this._canvas.style.width = size.x + this.paddingSize * 2 + 'px';
       paper.project.view.viewSize.width = size.x + this.paddingSize * 2;
@@ -228,7 +234,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
 
     this._oldZoom = map.getZoom();
-    this._oldCenter = map.getCenter();
 
     map.on('move', this._onMove, this);
 
@@ -281,6 +286,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     paper.project.activeLayer.scale(this.zoomScale);
 
     const newPos = this._map._latLngToNewLayerPoint(
+      // TODO:
       this._map.containerPointToLatLng(paper.project.activeLayer.position),
       zoom,
       center
@@ -307,26 +313,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     const center = e.center || this._map.getCenter();
 
     debug(`zoom, old:${this._oldZoom} zoom:${zoom}`);
-
-    // data for flyTo mode
-
-    if (e.flyTo) {
-      // save scale to compute
-      this._scale = this.zoomScale;
-
-      // call flyTo handle
-      // return this._onFly({ event: e, parentEvent: 'zoom' });
-    } else {
-      // save old center
-      this._oldCenter = center;
-
-      debug(`zoom end, old:${this._oldZoom} zoom:${zoom}`);
-
-      // turn off zoom handle if not in flyTo
-      if (e.type === 'zoom') {
-        return;
-      }
-    }
 
     // needed calcs
     this._recalcZoom({ zoom, center, event: e, saveData: true });
