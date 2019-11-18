@@ -91,7 +91,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     resultPath.bringToFront();
 
-    resultPath._onClick = (e) => {
+    resultPath.onClick = (e) => {
       e.point = this._subtractPadding(e.point);
       onClick && onClick(e, { polygon: resultPath, layer: this });
     };
