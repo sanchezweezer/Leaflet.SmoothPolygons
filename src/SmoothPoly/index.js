@@ -9,15 +9,19 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         return this;
     },
 
+    //отступ канваса, для того, что бы не было обрезки полигонов на краях карты при движении
     paddingSize: 128,
 
+    // когда перерисовывать полигоны, что бы получить новую симплифицированную форму
     redrawScale: 3,
 
+    //хранение всех полигонов для перерировки
     paths: [],
 
+    // оригинальная позиция (без смещения) основного слоя
     _originPosition: {},
 
-    subtractPadding(point) {
+    _subtractPadding(point) {
         return new paper.Point(point).subtract(this.paddingSize);
     },
 
@@ -41,6 +45,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
         const polygonCoords = this.getPolygonsCord(polygon.data, centralPoint);
 
+        // рисуем внешний контур
         const outerPath = new paper.Path({
             segments: polygonCoords,
             fillColor: 'rgba(0,0,0,.5)',
@@ -52,6 +57,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
         outerPath.simplify();
 
+        //вырезаем все внетренние дырки
         let resultPath = polygon.exclude.reduce((_result, item) => {
             return item.polygons.reduce((result, item) => {
                 const excludePath = new paper.Path({
@@ -71,10 +77,10 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             }, outerPath);
         }, outerPath);
 
+        //удаляем внешнюю часть
         outerPath.remove();
 
-        // resultPath.scale(1 / mapScale);
-
+        // смещаем на отступ канваса
         resultPath.translate({ x: this.paddingSize, y: this.paddingSize });
 
         resultPath.fullySelected = false;
@@ -108,6 +114,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         return resultPath;
     },
 
+    // основная функция через которую можно добавлять полигоны
     addToScene: function(polygon, centralPoint, pathOptions = {}) {
         this._originPosition = {};
 
@@ -123,7 +130,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     _redraw: function() {
         this.clearAll();
         this.paths.forEach(({ polygon, centralPoint, pathOptions }) => {
-            console.log({ polygon, centralPoint, pathOptions });
             return this._drawPolygon(polygon, centralPoint, pathOptions);
         });
     },
@@ -167,11 +173,11 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         this._oldCenter = this._map.getCenter();
     },
 
-    _onReset: function(e) {
-        console.log('reset', e);
+    _onReset: function() {
+        this._redraw();
     },
 
-    _onResize: function(e) {
+    _onResize: function() {
         let size = this._map.getSize();
 
         //если карта изменила размеры, то выставление новых размеров канваса
@@ -211,6 +217,8 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         map.getPanes().overlayPane.removeChild(this._canvas);
 
         map.off('move', debounce(this._onMove), this);
+
+        map.off('viewreset', debounce(this._onReset), this);
 
         if (map.options.zoomAnimation) {
             map.off('zoomanim', debounce(this._animateZoom), this);
@@ -285,7 +293,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     }
 });
 
-L.SmoothPolygonsLayer.getPolygonsBounds = function(polygons) {
+L.SmoothPolygonsLayer.getPolygonsBounds = function() {
     return paper.project.activeLayer.bounds.clone();
 };
 
