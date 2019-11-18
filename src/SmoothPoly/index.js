@@ -52,8 +52,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             return item.polygons.reduce((result, item) => {
                 const excludePath = new paper.Path({
                     segments: this.getPolygonsCord(item.data, centralPoint),
-                    closed: true,
-                    ...options
+                    closed: true
                 });
 
                 excludePath.smooth();
@@ -71,6 +70,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         outerPath.remove();
 
         resultPath.translate({ x: this.paddingSize, y: this.paddingSize });
+        // if (this.canvasOffset) resultPath.translate(this.canvasOffset);
 
         resultPath.fullySelected = false;
 
@@ -98,25 +98,25 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             onMouseLeave && onMouseLeave(e, { polygon: resultPath, layer: this });
         };
 
-        this._originPosition = paper.project.activeLayer.position.clone();
+        this._originPosition = paper.project.activeLayer.position.clone().add(this.canvasOffset);
 
         return resultPath;
     },
 
     _onMove: function(e) {
         //получение точки CRS 0,0 (нулевой точки слоя карты)
-        let topLeft = this._map.containerPointToLayerPoint([0, 0]);
+        this.canvasOffset = this._map.containerPointToLayerPoint([0, 0]);
 
         //выравнивание канваса относительно смещения карты
-        L.DomUtil.setPosition(this._canvas, topLeft);
+        L.DomUtil.setPosition(this._canvas, this.canvasOffset);
 
         this._onResize(e);
 
         // смещение всех полигонов через активный слой
         // new paper.Path.Rectangle(paper.project.activeLayer.bounds);
         paper.project.activeLayer.position = new paper.Point({
-            x: this._originPosition.x + -1 * topLeft.x,
-            y: this._originPosition.y + -1 * topLeft.y
+            x: this._originPosition.x + -1 * this.canvasOffset.x,
+            y: this._originPosition.y + -1 * this.canvasOffset.y
         });
     },
 
@@ -170,16 +170,19 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         canvas.style[originProp] = '50% 50%';
 
         let size = this._map.getSize();
+
         canvas.width = size.x + this.paddingSize * 2;
         canvas.height = size.y + this.paddingSize * 2;
+
         canvas.style.width = size.x + this.paddingSize * 2 + 'px';
         canvas.style.height = size.y + this.paddingSize * 2 + 'px';
+
+        canvas.style.top = -1 * this.paddingSize + 'px';
+        canvas.style.left = -1 * this.paddingSize + 'px';
 
         paper.setup(this._canvas);
 
         this._map._panes.overlayPane.appendChild(this._canvas);
-        canvas.style.top = -1 * this.paddingSize + 'px';
-        canvas.style.left = -1 * this.paddingSize + 'px';
     },
 
     _animateZoom: function(e) {
@@ -192,7 +195,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         );
 
         paper.project.activeLayer.scale(scale);
-        paper.project.activeLayer.position = newPos;
+        paper.project.activeLayer.position = newPos.subtract(this.canvasOffset);
         this._originPosition = newPos;
     }
 });
