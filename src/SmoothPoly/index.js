@@ -1,4 +1,5 @@
 import L from 'leaflet';
+import 'leaflet-geometryutil';
 import paper from 'paper';
 
 L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
