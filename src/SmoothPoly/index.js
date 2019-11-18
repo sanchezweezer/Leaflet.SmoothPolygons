@@ -7,7 +7,8 @@ const DEBOUNCE_TIME = 0;
 
 const isNotProd = process.env.NODE_ENV !== 'production';
 
-const debug = (text) => isNotProd && console.log(text);
+// TODO: remove false condition in production
+const debug = (text) => false && isNotProd && console.log(text);
 
 L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
   addTo: function(map) {
@@ -27,7 +28,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
   // original position (no offset) of the base layer
   _originPosition: {},
 
-  // central Point(<LatLng> latlng) of polygons
+  // central Point(<LatLng> latlng) of the first drawn polygon. Needed to calculate shift of canvas.
   _position: {},
 
   _subtractPadding(point) {
@@ -55,6 +56,15 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
   _getPaddingOffsetObject: function() {
     return { x: this.paddingSize, y: this.paddingSize };
+  },
+
+  _getViewportSize: function() {
+    const mapSize = this._map.getSize();
+
+    return {
+      width: mapSize.x + this.paddingSize * 2,
+      height: mapSize.y + this.paddingSize * 2
+    };
   },
 
   _drawPolygon: function(polygon, centralPoint, pathOptions = {}) {
@@ -193,8 +203,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     // Canvas alignment relative to map offset
     L.DomUtil.setPosition(this._canvas, this.canvasOffset);
 
-    this._onResize(e);
-
     // displacement of all polygons through the active layer
     // new paper.Path.Rectangle(paper.project.activeLayer.bounds);
     paper.project.activeLayer.position = new paper.Point({
@@ -209,20 +217,17 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
   },
 
   _onResize: debounce(function() {
-    let size = this._map.getSize();
+    const newSize = this._getViewportSize();
 
     // if the card has resized, then setting the new canvas size
-    if (this._canvas.width !== size.x + this.paddingSize * 2) {
+    if (this._canvas.width !== newSize.width) {
       debug('resize x');
-      this._canvas.width = size.x + this.paddingSize * 2;
-      this._canvas.style.width = size.x + this.paddingSize * 2 + 'px';
-      paper.project.view.viewSize.width = size.x + this.paddingSize * 2;
+      paper.project.view.viewSize.width = newSize.width;
     }
-    if (this._canvas.height !== size.y + this.paddingSize * 2) {
+
+    if (this._canvas.height !== newSize.height) {
       debug('resize y');
-      this._canvas.height = size.y + this.paddingSize * 2;
-      this._canvas.style.height = size.y + this.paddingSize * 2 + 'px';
-      paper.project.view.viewSize.height = size.y + this.paddingSize * 2;
+      paper.project.view.viewSize.height = newSize.height;
     }
   }, DEBOUNCE_TIME),
 
@@ -238,6 +243,8 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     map.on('move', this._onMove, this);
 
     map.on('viewreset', this._onReset, this);
+
+    map.on('resize', this._onResize, this);
 
     if (map.options.zoomAnimation && L.Browser.any3d) {
       map.on('zoomanim zoom', this._animateZoom, this);
@@ -264,13 +271,13 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     let originProp = L.DomUtil.testProp(['transformOrigin', 'WebkitTransformOrigin', 'msTransformOrigin']);
     canvas.style[originProp] = '50% 50%';
 
-    let size = this._map.getSize();
+    const size = this._getViewportSize();
 
-    canvas.width = size.x + this.paddingSize * 2;
-    canvas.height = size.y + this.paddingSize * 2;
+    canvas.width = size.width;
+    canvas.height = size.height;
 
-    canvas.style.width = size.x + this.paddingSize * 2 + 'px';
-    canvas.style.height = size.y + this.paddingSize * 2 + 'px';
+    canvas.style.width = size.width + 'px';
+    canvas.style.height = size.height + 'px';
 
     canvas.style.top = -1 * this.paddingSize + 'px';
     canvas.style.left = -1 * this.paddingSize + 'px';
