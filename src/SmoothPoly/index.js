@@ -29,6 +29,10 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         paper.project.clear();
     },
 
+    clearAllPaths: function() {
+        this.paths.splice(0);
+    },
+
     getPolygonsCord: function(cords, center) {
         return cords
             .sort((a, b) => a.Direction - b.Direction)
