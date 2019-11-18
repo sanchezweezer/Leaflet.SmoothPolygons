@@ -314,7 +314,9 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
       .add(this._getPaddingOffsetObject());
 
     // Sets new position of the paper.
-    paper.project.activeLayer.position = new paper.Point(newOriginPosition.subtract(this.canvasOffset));
+    paper.project.activeLayer.position = new paper.Point(
+      newOriginPosition.subtract({ x: this.canvasOffset, y: this.canvasOffset })
+    );
     this._originPosition = newOriginPosition;
   },
 
@@ -325,7 +327,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
    */
   _onMove: debounce(function(e) {
     debug('move');
-    if (e.flyTo) return this._onFly({ event: e, parentEvent: 'move' });
+    if (e.flyTo) this._onFly({ event: e, parentEvent: 'move' });
 
     /* Given a pixel coordinate relative to the map container,
           returns the corresponding pixel coordinate relative to the origin pixel.
