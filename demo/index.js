@@ -4,7 +4,28 @@ import '../src/SmoothPoly';
 
 import 'leaflet/dist/leaflet.css';
 
-import data from './config';
+import { data } from './config';
+
+//функция "замеса" цветов для создания прозрачных тонов, того же цвета
+const hexToRGBA = (hex, alpha = false) => {
+    let hexAlpha = false,
+        h = hex.slice(hex.startsWith('#') ? 1 : 0);
+    if (h.length === 3) h = [...h].map((x) => x + x).join('');
+    else if (h.length === 8) hexAlpha = true;
+    h = parseInt(h, 16);
+    return (
+        'rgb' +
+        (alpha || hexAlpha ? 'a' : '') +
+        '(' +
+        (h >>> (hexAlpha ? 24 : 16)) +
+        ', ' +
+        ((h & (hexAlpha ? 0x00ff0000 : 0x00ff00)) >>> (hexAlpha ? 16 : 8)) +
+        ', ' +
+        ((h & (hexAlpha ? 0x0000ff00 : 0x0000ff)) >>> (hexAlpha ? 8 : 0)) +
+        (alpha !== false ? `, ${alpha}` : '') +
+        ')'
+    );
+};
 
 const startZoom = 16;
 
@@ -30,3 +51,18 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/
     .addTo(map);
 
 const heat = L.smoothPolygonsLayer().addTo(map);
+
+data[0].WindCm[0].polygons.forEach((polygon, index) => {
+    heat.draw(polygon, startPoint, {
+        onMouseLeave: (e, rest) => {},
+
+        onClick: (e, rest) => {},
+
+        onMouseEnter: (e, rest) => {},
+
+        onMouseMove: (e, rest) => {},
+        options: {
+            fillColor: hexToRGBA('#07a2b9', 0.1 + 0.1 * index)
+        }
+    });
+});
