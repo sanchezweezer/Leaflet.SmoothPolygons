@@ -52,7 +52,8 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             return item.polygons.reduce((result, item) => {
                 const excludePath = new paper.Path({
                     segments: this.getPolygonsCord(item.data, centralPoint),
-                    closed: true
+                    closed: true,
+                    ...options
                 });
 
                 excludePath.smooth();
@@ -98,6 +99,16 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         };
 
         this._originPosition = paper.project.activeLayer.position.clone();
+
+        L.circle(this._map.containerPointToLatLng(paper.project.activeLayer.position), {
+            radius: 500,
+            color: 'yellow'
+        }).addTo(this._map);
+
+        L.circle(this._map.getCenter(), {
+            radius: 700,
+            color: 'black'
+        }).addTo(this._map);
 
         return resultPath;
     },
@@ -192,20 +203,63 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     },
 
     _animateZoom: function(e) {
-        let scale = this._map.getZoomScale(e.zoom),
-            offset = this._map._getCenterOffset(e.center)._multiplyBy(-scale);
+        // debugger;
+        const scale = this._map.getZoomScale(e.zoom);
+
+        const offset = this._map._getCenterOffset(e.center);
+
+        console.log(this._map._getCenterLayerPoint(), this._map.latLngToLayerPoint(e.center));
+        // _latLngBoundsToNewLayerBounds
+        // _setZoomTransform
+        // debugger;
+        // const textOffset = this._map._latLngBoundsToNewLayerBounds(this._bounds, e.zoom, e.center).min;
+        const offsetClone = offset.clone();
+        const resultOffset = offset._multiplyBy(-1 * scale);
+        const panePos = this._map._getMapPanePos();
+        const newResOffset = resultOffset.subtract(panePos);
         // .subtract(this._map._getMapPanePos());
 
         debugger;
+        // L.DomUtil.setTransform(canvas, offset, scale);
+
+        const oldPosition = paper.project.activeLayer.position.clone();
+
+        L.polyline([
+            this._map.containerPointToLatLng(paper.project.activeLayer.position),
+            this._map.containerPointToLatLng(L.point(offsetClone).add(paper.project.activeLayer.position))
+        ]).addTo(this._map);
+
+        L.polyline(
+            [
+                this._map.containerPointToLatLng(paper.project.activeLayer.position),
+                this._map.containerPointToLatLng(L.point(resultOffset).add(paper.project.activeLayer.position))
+            ],
+            { color: 'red' }
+        ).addTo(this._map);
+        L.circle(this._map.containerPointToLatLng(paper.project.activeLayer.position), { radius: 300 }).addTo(this._map);
+        L.circle(this._map.containerPointToLatLng(L.point(offset).add(paper.project.activeLayer.position)), {
+            radius: 300,
+            color: 'purple'
+        }).addTo(this._map);
+        L.circle(this._map.containerPointToLatLng(L.point(offsetClone).add(paper.project.activeLayer.position)), {
+            radius: 300,
+            color: 'green'
+        }).addTo(this._map);
 
         paper.project.activeLayer.tween(
             {
-                scaling: scale,
-                'position.x': this._originPosition.x + -1 * offset.x,
-                'position.y': this._originPosition.y + -1 * offset.y
+                scaling: scale
+                // 'viewMatrix.translation': resultOffset.clone()
             },
             300
         );
+
+        const newPosition = paper.project.activeLayer.position.clone();
+
+        L.polyline([this._map.containerPointToLatLng(oldPosition), this._map.containerPointToLatLng(newPosition)], {
+            color: 'purple',
+            weight: 6
+        }).addTo(this._map);
     }
 });
 
