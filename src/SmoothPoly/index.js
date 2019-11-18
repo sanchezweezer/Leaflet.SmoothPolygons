@@ -93,22 +93,22 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     resultPath.onClick = (e) => {
       e.point = this._subtractPadding(e.point);
-      onClick && onClick(e, { polygon: resultPath, layer: this });
+      onClick && onClick(e, { polygon: resultPath, layer: paper.project.activeLayer, context: this });
     };
 
     resultPath.onMouseEnter = (e) => {
       e.point = this._subtractPadding(e.point);
-      onMouseEnter && onMouseEnter(e, { polygon: resultPath, layer: this });
+      onMouseEnter && onMouseEnter(e, { polygon: resultPath, layer: paper.project.activeLayer, context: this });
     };
 
     resultPath.onMouseMove = (e) => {
       e.point = this._subtractPadding(e.point);
-      onMouseMove && onMouseMove(e, { polygon: resultPath, layer: this });
+      onMouseMove && onMouseMove(e, { polygon: resultPath, layer: paper.project.activeLayer, context: this });
     };
 
     resultPath.onMouseLeave = (e) => {
       e.point = this._subtractPadding(e.point);
-      onMouseLeave && onMouseLeave(e, { polygon: resultPath, layer: this });
+      onMouseLeave && onMouseLeave(e, { polygon: resultPath, layer: paper.project.activeLayer, context: this });
     };
 
     this._originPosition = paper.project.activeLayer.position.clone().add(this.canvasOffset);
