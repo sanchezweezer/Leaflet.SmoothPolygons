@@ -9,7 +9,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         return this;
     },
 
-    paddingSize: 1,
+    paddingSize: 128,
 
     redrawScale: 3,
 
@@ -47,8 +47,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             closed: true,
             ...options
         });
-
-        const mapScale = this._map.getMaxZoom() - this._map.getZoom();
 
         outerPath.smooth();
 
@@ -261,6 +259,11 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
         paper.project.activeLayer.scale(scale);
         paper.project.activeLayer.position = newPos.subtract(this.canvasOffset || [0, 0]);
+
+        const paddingTranslate = scale > 1 ? -1 * this.paddingSize : scale * this.paddingSize;
+
+        paper.project.activeLayer.translate({ x: paddingTranslate, y: paddingTranslate });
+
         this._oldZoom = zoom;
         this._originPosition = newPos;
 
@@ -277,6 +280,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             );
             paper.project.activeLayer.scale(scale);
             paper.project.activeLayer.position = newPos.subtract(this.canvasOffset || [0, 0]);
+            paper.project.activeLayer.translate({ x: paddingTranslate, y: paddingTranslate });
         }
     }
 });
