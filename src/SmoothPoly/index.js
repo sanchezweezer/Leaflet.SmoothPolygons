@@ -11,9 +11,11 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     paddingSize: 1,
 
+    redrawScale: 3,
+
     paths: [],
 
-    _originPosition: { x: 0, y: 0 },
+    _originPosition: {},
 
     subtractPadding(point) {
         return new paper.Point(point).subtract(this.paddingSize);
@@ -34,7 +36,9 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             });
     },
 
-    addToScene: function(polygon, centralPoint, { onMouseEnter, onMouseLeave, onClick, onMouseMove, options = {} } = {}) {
+    _drawPolygon: function(polygon, centralPoint, pathOptions = {}) {
+        const { onMouseEnter, onMouseLeave, onClick, onMouseMove, options = {} } = pathOptions;
+
         const polygonCoords = this.getPolygonsCord(polygon.data, centralPoint);
 
         const outerPath = new paper.Path({
@@ -43,6 +47,8 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             closed: true,
             ...options
         });
+
+        const mapScale = this._map.getMaxZoom() - this._map.getZoom();
 
         outerPath.smooth();
 
@@ -69,12 +75,11 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
         outerPath.remove();
 
+        // resultPath.scale(1 / mapScale);
+
         resultPath.translate({ x: this.paddingSize, y: this.paddingSize });
-        // if (this.canvasOffset) resultPath.translate(this.canvasOffset);
 
         resultPath.fullySelected = false;
-
-        resultPath._originalPolygon = { ...polygon };
 
         resultPath.bringToFront();
 
@@ -100,10 +105,52 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
         this._originPosition = paper.project.activeLayer.position.clone().add(this.canvasOffset);
 
+        this._lastDrawZoom = this._map.getZoom();
+
         return resultPath;
     },
 
+    addToScene: function(polygon, centralPoint, pathOptions = {}) {
+        this._originPosition = {};
+
+        const resultPath = this._drawPolygon(polygon, centralPoint, pathOptions);
+
+        const originalPolygon = (resultPath._originalPolygon = { polygon, centralPoint, pathOptions });
+
+        this.paths.push(originalPolygon);
+
+        return resultPath;
+    },
+
+    _redraw: function() {
+        this.clearAll();
+        this.paths.forEach(({ polygon, centralPoint, pathOptions }) => {
+            console.log({ polygon, centralPoint, pathOptions });
+            return this._drawPolygon(polygon, centralPoint, pathOptions);
+        });
+    },
+
+    _onFly: function() {
+        const center = this._map.getCenter();
+        const zoom = this._map.getZoom();
+
+        const currentCenterPoint = this._map.project(this._oldCenter, zoom);
+        const destCenterPoint = this._map.project(center, zoom);
+        const centerOffset = destCenterPoint.subtract(currentCenterPoint);
+
+        const topLeftOffset = centerOffset.multiplyBy(-1 * this._scale);
+
+        paper.project.activeLayer.position = new paper.Point({
+            x: this._originPosition.x + topLeftOffset.x,
+            y: this._originPosition.y + topLeftOffset.y
+        });
+
+        this._oldCenter = this._map.getCenter();
+    },
+
     _onMove: function(e) {
+        if (e.flyTo) return this._onFly(e);
+
         //получение точки CRS 0,0 (нулевой точки слоя карты)
         this.canvasOffset = this._map.containerPointToLayerPoint([0, 0]);
 
@@ -118,6 +165,12 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             x: this._originPosition.x + -1 * this.canvasOffset.x,
             y: this._originPosition.y + -1 * this.canvasOffset.y
         });
+
+        this._oldCenter = this._map.getCenter();
+    },
+
+    _onReset: function(e) {
+        console.log('reset', e);
     },
 
     _onResize: function(e) {
@@ -144,10 +197,15 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             this._initCanvas();
         }
 
+        this._oldZoom = map.getZoom();
+        this._oldCenter = map.getCenter();
+
         map.on('move', debounce(this._onMove), this);
 
+        map.on('viewreset', debounce(this._onReset), this);
+
         if (map.options.zoomAnimation && L.Browser.any3d) {
-            map.on('zoomanim', debounce(this._animateZoom), this);
+            map.on('zoomanim zoom', debounce(this._animateZoom), this);
         }
     },
 
@@ -186,27 +244,45 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     },
 
     _animateZoom: function(e) {
-        const scale = this._map.getZoomScale(e.zoom);
+        const zoom = e.zoom || this._map.getZoom();
+        const center = e.center || this._map.getCenter();
+
+        const scale = this._map.getZoomScale(zoom, this._oldZoom);
 
         const newPos = this._map._latLngToNewLayerPoint(
             this._map.containerPointToLatLng(paper.project.activeLayer.position),
-            e.zoom,
-            e.center
+            zoom,
+            center
         );
 
+        if (e.flyTo) {
+            this._scale = scale;
+        }
+
         paper.project.activeLayer.scale(scale);
-        paper.project.activeLayer.position = newPos.subtract(this.canvasOffset);
+        paper.project.activeLayer.position = newPos.subtract(this.canvasOffset || [0, 0]);
+        this._oldZoom = zoom;
         this._originPosition = newPos;
+
+        if (!e.flyTo) {
+            this._oldCenter = center;
+        }
+
+        if (Math.abs(this._lastDrawZoom - zoom) > this.redrawScale) {
+            this._redraw();
+            const newPos = this._map._latLngToNewLayerPoint(
+                this._map.containerPointToLatLng(paper.project.activeLayer.position),
+                zoom,
+                center
+            );
+            paper.project.activeLayer.scale(scale);
+            paper.project.activeLayer.position = newPos.subtract(this.canvasOffset || [0, 0]);
+        }
     }
 });
 
 L.SmoothPolygonsLayer.getPolygonsBounds = function(polygons) {
-    const _compound = new paper.CompoundPath({
-        children: polygons.map((item) => item.path3)
-    });
-    const bounds = _compound.bounds.clone();
-    _compound.remove();
-    return bounds;
+    return paper.project.activeLayer.bounds.clone();
 };
 
 L.smoothPolygonsLayer = function(latlngs, options) {
