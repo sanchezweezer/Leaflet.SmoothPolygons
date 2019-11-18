@@ -66,6 +66,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
    * Clears {@code this.paths}
    */
   clearAllPaths: function() {
+    this._position = {};
     this.paths.splice(0);
   },
 
@@ -302,6 +303,9 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
    */
   _onFly: function({ event, parentEvent }) {
     debug(parentEvent + 'fly');
+
+    // Prevents if position is empty. In fact, if no one polygon had been drawn.
+    if (!(this._position.lat && this._position.lng)) return;
 
     // Calculates new position of the paper
     const newOriginPosition = this._map
