@@ -99,7 +99,12 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         };
 
         this._originPosition = paper.project.activeLayer.position.clone();
+        this._originPositionLat = this._map.containerPointToLatLng(paper.project.activeLayer.position.clone());
 
+        return resultPath;
+    },
+
+    drawCenters: function() {
         L.circle(this._map.containerPointToLatLng(paper.project.activeLayer.position), {
             radius: 500,
             color: 'yellow'
@@ -109,20 +114,11 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             radius: 700,
             color: 'black'
         }).addTo(this._map);
-
-        return resultPath;
     },
 
     _onMove: function(e) {
         //получение точки CRS 0,0 (нулевой точки слоя карты)
         let topLeft = this._map.containerPointToLayerPoint([0, 0]);
-
-        // debug circle
-        // if (!this.count) this.count = 0;
-        // L.circle(this._map.containerPointToLatLng([100, 100]), { radius: 200 })
-        //     .addTo(this._map)
-        //     .bindTooltip(this.count.toString());
-        // this.count++;
 
         //выравнивание канваса относительно смещения карты
         L.DomUtil.setPosition(this._canvas, topLeft);
@@ -130,7 +126,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         this._onResize(e);
 
         // смещение всех полигонов через активный слой
-        new paper.Path.Rectangle(paper.project.activeLayer.bounds);
+        // new paper.Path.Rectangle(paper.project.activeLayer.bounds);
         paper.project.activeLayer.position = new paper.Point({
             x: this._originPosition.x + -1 * topLeft.x,
             y: this._originPosition.y + -1 * topLeft.y
@@ -161,8 +157,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
             this._initCanvas();
         }
 
-        map.on('move', debounce(this._onMove), this);
-        // map.on('resize', debounce(this._onResize, 800), this);
+        // map.on('move', debounce(this._onMove), this);
 
         if (map.options.zoomAnimation && L.Browser.any3d) {
             map.on('zoomanim', debounce(this._animateZoom), this);
@@ -173,7 +168,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         map.getPanes().overlayPane.removeChild(this._canvas);
 
         map.off('move', debounce(this._onMove), this);
-        // map.on('resize', debounce(this._onResize), this);
 
         if (map.options.zoomAnimation) {
             map.off('zoomanim', debounce(this._animateZoom), this);
@@ -187,7 +181,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
         let originProp = L.DomUtil.testProp(['transformOrigin', 'WebkitTransformOrigin', 'msTransformOrigin']);
         canvas.style[originProp] = '50% 50%';
-        // canvas.style.background = 'rgba(0,0,0,.4)';
 
         let size = this._map.getSize();
         canvas.width = size.x + this.paddingSize * 2;
@@ -203,63 +196,43 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     },
 
     _animateZoom: function(e) {
-        // debugger;
         const scale = this._map.getZoomScale(e.zoom);
 
-        const offset = this._map._getCenterOffset(e.center);
+        const offset = this._map._getCenterOffset(e.center); //._multiplyBy(-scale).subtract(panePos);
 
-        console.log(this._map._getCenterLayerPoint(), this._map.latLngToLayerPoint(e.center));
-        // _latLngBoundsToNewLayerBounds
-        // _setZoomTransform
-        // debugger;
-        // const textOffset = this._map._latLngBoundsToNewLayerBounds(this._bounds, e.zoom, e.center).min;
-        const offsetClone = offset.clone();
-        const resultOffset = offset._multiplyBy(-1 * scale);
-        const panePos = this._map._getMapPanePos();
-        const newResOffset = resultOffset.subtract(panePos);
-        // .subtract(this._map._getMapPanePos());
+        const newPos = this._map._latLngToNewLayerPoint(this._originPositionLat || [0, 0], e.zoom, e.center).round();
 
-        debugger;
-        // L.DomUtil.setTransform(canvas, offset, scale);
+        // const offsetClone = offset.clone();
+        // const resultOffset = offset._multiplyBy(-1 * scale);
+        // const panePos = this._map._getMapPanePos();
+        // const newResOffset = resultOffset.subtract(panePos);
+        //
+        // L.polyline([
+        //     this._map.containerPointToLatLng(paper.project.activeLayer.position),
+        //     this._map.containerPointToLatLng(L.point(offsetClone).add(paper.project.activeLayer.position))
+        // ]).addTo(this._map);
+        //
+        // L.polyline(
+        //     [
+        //         this._map.containerPointToLatLng(paper.project.activeLayer.position),
+        //         this._map.containerPointToLatLng(L.point(newResOffset).add(paper.project.activeLayer.position))
+        //     ],
+        //     { color: 'red' }
+        // ).addTo(this._map);
+        // L.circle(this._map.containerPointToLatLng(paper.project.activeLayer.position), { radius: 300 }).addTo(
+        //     this._map
+        // );
 
-        const oldPosition = paper.project.activeLayer.position.clone();
-
-        L.polyline([
-            this._map.containerPointToLatLng(paper.project.activeLayer.position),
-            this._map.containerPointToLatLng(L.point(offsetClone).add(paper.project.activeLayer.position))
-        ]).addTo(this._map);
-
-        L.polyline(
-            [
-                this._map.containerPointToLatLng(paper.project.activeLayer.position),
-                this._map.containerPointToLatLng(L.point(resultOffset).add(paper.project.activeLayer.position))
-            ],
-            { color: 'red' }
-        ).addTo(this._map);
-        L.circle(this._map.containerPointToLatLng(paper.project.activeLayer.position), { radius: 300 }).addTo(this._map);
-        L.circle(this._map.containerPointToLatLng(L.point(offset).add(paper.project.activeLayer.position)), {
-            radius: 300,
-            color: 'purple'
-        }).addTo(this._map);
-        L.circle(this._map.containerPointToLatLng(L.point(offsetClone).add(paper.project.activeLayer.position)), {
-            radius: 300,
-            color: 'green'
-        }).addTo(this._map);
-
-        paper.project.activeLayer.tween(
-            {
-                scaling: scale
-                // 'viewMatrix.translation': resultOffset.clone()
-            },
-            300
-        );
-
-        const newPosition = paper.project.activeLayer.position.clone();
-
-        L.polyline([this._map.containerPointToLatLng(oldPosition), this._map.containerPointToLatLng(newPosition)], {
-            color: 'purple',
-            weight: 6
-        }).addTo(this._map);
+        paper.project.activeLayer.scale(scale);
+        // paper.project.activeLayer.tween(
+        //     {
+        //         scaling: scale
+        //         // 'position.x': this._originPosition.x + newResOffset.x,
+        //         // 'position.y': this._originPosition.y + newResOffset.y
+        //         // 'viewMatrix.translation': { x: offset.x + -1 * scale, y: offset.y + -1 * scale }
+        //     },
+        //     300
+        // );
     }
 });
 
