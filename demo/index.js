@@ -34,6 +34,8 @@ const startPoint = { lat: 55.75, lng: 37.61 };
 const mapOptions = {};
 const tileOptions = {};
 
+const flyToBtn = document.getElementById('flyTo');
+
 const map = L.map('map', {
   zoomControl: false,
   ...mapOptions
@@ -53,7 +55,6 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/
 const heat = L.smoothPolygonsLayer().addTo(map);
 
 heat.clearAll();
-
 data[0].WindCm[0].polygons.forEach((polygon, index) => {
   heat.addToScene(polygon, startPoint, {
     onMouseLeave: (e, rest) => {},
@@ -68,3 +69,7 @@ data[0].WindCm[0].polygons.forEach((polygon, index) => {
     }
   });
 });
+
+flyToBtn.onclick = function() {
+  map.flyTo({ lat: 55.76, lng: 37.62 });
+};
