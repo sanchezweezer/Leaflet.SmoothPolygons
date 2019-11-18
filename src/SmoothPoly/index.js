@@ -88,22 +88,22 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
         resultPath.bringToFront();
 
         resultPath._onClick = (e) => {
-            e.point = this.subtractPadding(e.point);
+            e.point = this._subtractPadding(e.point);
             onClick && onClick(e, { polygon: resultPath, layer: this });
         };
 
         resultPath.onMouseEnter = (e) => {
-            e.point = this.subtractPadding(e.point);
+            e.point = this._subtractPadding(e.point);
             onMouseEnter && onMouseEnter(e, { polygon: resultPath, layer: this });
         };
 
         resultPath.onMouseMove = (e) => {
-            e.point = this.subtractPadding(e.point);
+            e.point = this._subtractPadding(e.point);
             onMouseMove && onMouseMove(e, { polygon: resultPath, layer: this });
         };
 
         resultPath.onMouseLeave = (e) => {
-            e.point = this.subtractPadding(e.point);
+            e.point = this._subtractPadding(e.point);
             onMouseLeave && onMouseLeave(e, { polygon: resultPath, layer: this });
         };
 
