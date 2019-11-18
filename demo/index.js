@@ -53,7 +53,9 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/
 const heat = L.smoothPolygonsLayer().addTo(map);
 
 data[0].WindCm[0].polygons.forEach((polygon, index) => {
-    heat.draw(polygon, startPoint, {
+    heat.clearAll();
+
+    heat.addToScene(polygon, startPoint, {
         onMouseLeave: (e, rest) => {},
 
         onClick: (e, rest) => {},
