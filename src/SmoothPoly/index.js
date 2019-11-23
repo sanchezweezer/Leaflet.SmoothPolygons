@@ -206,7 +206,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     resultPath.bringToFront();
 
-    // TODO: объединить в одну функцию добавления callbacks
     this._appendEventsCallbacks(resultPath, restParams);
 
     this._originPosition = paper.project.activeLayer.position.clone().add(this.canvasOffset);
