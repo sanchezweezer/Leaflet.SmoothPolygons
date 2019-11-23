@@ -1,10 +1,18 @@
 import L from 'leaflet';
 
-import '../src/SmoothPoly';
-
 import 'leaflet/dist/leaflet.css';
 
+import '../src/SmoothPoly';
+
 import { data } from './config';
+
+delete L.Icon.Default.prototype._getIconUrl;
+
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl: require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl: require('leaflet/dist/images/marker-shadow.png')
+});
 
 //функция "замеса" цветов для создания прозрачных тонов, того же цвета
 const hexToRGBA = (hex, alpha = false) => {
@@ -52,6 +60,8 @@ L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager_labels_under/
   })
   .addTo(map);
 
+const startFlyPoint = L.marker(startPoint).addTo(map);
+const endFlyPoint = L.marker({ lat: 55.77, lng: 37.62 }).addTo(map);
 const heat = L.smoothPolygonsLayer().addTo(map);
 
 heat.clearAll();
@@ -70,6 +80,9 @@ data[0].WindCm[0].polygons.forEach((polygon, index) => {
   });
 });
 
+let flyPoint = 'start';
+
 flyToBtn.onclick = function() {
-  map.flyTo({ lat: 55.76, lng: 37.62 });
+  map.flyTo(flyPoint === 'start' ? endFlyPoint.getLatLng() : startFlyPoint.getLatLng());
+  flyPoint = flyPoint === 'start' ? 'end' : 'start';
 };
