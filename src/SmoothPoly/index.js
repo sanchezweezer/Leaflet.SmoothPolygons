@@ -164,7 +164,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     drawFunc = defaultDrawFunc,
     getPolygonsCord = defaultGetPolygonsCord
   }) {
-    const { options = {}, ...restParams } = pathOptions;
+    const { options = {}, bringToFront = true, ...restParams } = pathOptions;
 
     const polygonCoords = getPolygonsCord({ coords: polygon.data, center: centralPoint, map: this._map });
 
@@ -204,7 +204,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     resultPath.fullySelected = false;
 
-    resultPath.bringToFront();
+    if (bringToFront) resultPath.bringToFront();
 
     this._appendEventsCallbacks(resultPath, restParams);
 
