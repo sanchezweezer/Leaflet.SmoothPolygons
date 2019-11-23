@@ -1,13 +1,10 @@
 import L from 'leaflet';
 import 'leaflet-geometryutil';
 import paper from 'paper';
-import { debounce } from './utils';
+import { debounce, debug, defaultDrawFunc, defaultGetPolygonsCord } from './utils';
+import { callbacksEvents } from './config';
 
 const DEBOUNCE_TIME = 0;
-
-const isNotProd = process.env.NODE_ENV !== 'production';
-
-const debug = (text) => isNotProd && console.log(text);
 
 L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
   // Number of pixel which defines offset of map when to redraw polygons
@@ -40,19 +37,30 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
    * @param polygon: polygon's coordinates
    * @param centralPoint: central point of the polygon
    * @param pathOptions: styles and interactivity of the polygon
+   * @param drawFunc: func for draw polygon
+   * @param getPolygonsCord: func for calc polygons coords
    * @returns {Paper.CompoundPath}: path of polygon
    */
-  addToScene: function(polygon, centralPoint, pathOptions = {}) {
+  addToScene: function({ options: pathOptions, ...params }) {
     this._originPosition = {};
 
     this._setDrawZoom();
 
-    const resultPath = this._drawPolygon(polygon, centralPoint, pathOptions);
+    const resultPath = this._drawPolygon({ pathOptions, ...params });
 
-    const originalPolygon = (resultPath._originalPolygon = { polygon, centralPoint, pathOptions });
+    const originalPolygon = (resultPath._originalPolygon = { pathOptions, ...params });
     this.paths.push(originalPolygon);
 
     return resultPath;
+  },
+
+  _appendEventsCallbacks: function(path, params) {
+    callbacksEvents.forEach((item) => {
+      path[item] = (e) => {
+        e.point = this._subtractPadding(e.point);
+        params[item] && params[item](e, { polygon: path, layer: paper.project.activeLayer, context: this });
+      };
+    });
   },
 
   /**
@@ -68,23 +76,6 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
   clearAllPaths: function() {
     this._position = {};
     this.paths.splice(0);
-  },
-
-  /**
-   * Maps polygon data taken from API data to correct format ([x, y])
-   * @param coords: array of polygon coordinates in API format ({ Direction, Value })
-   * @param center: central point of the polygon
-   * @returns array of coordinates in format [x, y]
-   */
-  getPolygonsCord: function(coords, center) {
-    return coords
-      .sort((a, b) => a.Direction - b.Direction)
-      .map((item) => {
-        const viewPoint = this._map.latLngToContainerPoint(
-          L.GeometryUtil.destination(center, item.Direction - 90, item.Value)
-        );
-        return [viewPoint.x, viewPoint.y];
-      });
   },
 
   /**
@@ -161,13 +152,21 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
    * @param polygon: polygon object from API in format { data: coordinates[], exclude: coordinates[], value: number}
    * @param centralPoint: central point of the polygon
    * @param pathOptions: styles and interactivity of the polygon
+   * @param drawFunc: func for draw polygon
+   * @param getPolygonsCord: func for calc polygons coords
    * @returns {Paper.CompoundPath}: path of polygon
    * @private
    */
-  _drawPolygon: function(polygon, centralPoint, pathOptions = {}) {
-    const { onMouseEnter, onMouseLeave, onClick, onMouseMove, options = {} } = pathOptions;
+  _drawPolygon: function({
+    polygon,
+    centralPoint,
+    pathOptions = {},
+    drawFunc = defaultDrawFunc,
+    getPolygonsCord = defaultGetPolygonsCord
+  }) {
+    const { options = {}, ...restParams } = pathOptions;
 
-    const polygonCoords = this.getPolygonsCord(polygon.data, centralPoint);
+    const polygonCoords = getPolygonsCord({ coords: polygon.data, center: centralPoint, map: this._map });
 
     // Draws the outer contour
     const outerPath = new paper.Path({
@@ -177,21 +176,17 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
       ...options
     });
 
-    outerPath.smooth();
-
-    outerPath.simplify();
+    drawFunc({ path: outerPath });
 
     // Cuts off all useless areas
     let resultPath = polygon.exclude.reduce((_result, item) => {
       return item.polygons.reduce((result, item) => {
         const excludePath = new paper.Path({
-          segments: this.getPolygonsCord(item.data, centralPoint),
+          segments: getPolygonsCord({ coords: item.data, center: centralPoint, map: this._map }),
           closed: true
         });
 
-        excludePath.smooth();
-
-        excludePath.simplify();
+        drawFunc({ path: excludePath });
 
         result = result.subtract(excludePath);
 
@@ -211,25 +206,8 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
 
     resultPath.bringToFront();
 
-    resultPath.onClick = (e) => {
-      e.point = this._subtractPadding(e.point);
-      onClick && onClick(e, { polygon: resultPath, layer: paper.project.activeLayer, context: this });
-    };
-
-    resultPath.onMouseEnter = (e) => {
-      e.point = this._subtractPadding(e.point);
-      onMouseEnter && onMouseEnter(e, { polygon: resultPath, layer: paper.project.activeLayer, context: this });
-    };
-
-    resultPath.onMouseMove = (e) => {
-      e.point = this._subtractPadding(e.point);
-      onMouseMove && onMouseMove(e, { polygon: resultPath, layer: paper.project.activeLayer, context: this });
-    };
-
-    resultPath.onMouseLeave = (e) => {
-      e.point = this._subtractPadding(e.point);
-      onMouseLeave && onMouseLeave(e, { polygon: resultPath, layer: paper.project.activeLayer, context: this });
-    };
+    // TODO: объединить в одну функцию добавления callbacks
+    this._appendEventsCallbacks(resultPath, restParams);
 
     this._originPosition = paper.project.activeLayer.position.clone().add(this.canvasOffset);
 
@@ -413,7 +391,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
   _redraw: function() {
     this.clearAll();
     this.paths.forEach(({ polygon, centralPoint, pathOptions }) => {
-      return this._drawPolygon(polygon, centralPoint, pathOptions);
+      return this._drawPolygon({ polygon, centralPoint, pathOptions });
     });
     this._setDrawZoom();
   },

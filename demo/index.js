@@ -66,16 +66,28 @@ const heat = L.smoothPolygonsLayer().addTo(map);
 
 heat.clearAll();
 data[0].WindCm[0].polygons.forEach((polygon, index) => {
-  heat.addToScene(polygon, startPoint, {
-    onMouseLeave: (e, rest) => {},
-
-    onClick: (e, rest) => {},
-
-    onMouseEnter: (e, rest) => {},
-
-    onMouseMove: (e, rest) => {},
+  heat.addToScene({
+    polygon,
+    centralPoint: startPoint,
     options: {
-      fillColor: hexToRGBA('#07a2b9', 0.1 + 0.1 * index)
+      onMouseLeave: (e, rest) => {
+        // console.log('onMouseLeave', e, rest);
+      },
+
+      onClick: (e, rest) => {
+        console.log('onClick', e, rest);
+      },
+
+      onMouseEnter: (e, rest) => {
+        // console.log('onMouseEnter', e, rest);
+      },
+
+      onMouseMove: (e, rest) => {
+        // console.log('onMouseMove', e, rest);
+      },
+      options: {
+        fillColor: hexToRGBA('#07a2b9', 0.1 + 0.1 * index)
+      }
     }
   });
 });
