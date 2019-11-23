@@ -43,6 +43,8 @@ const mapOptions = {};
 const tileOptions = {};
 
 const flyToBtn = document.getElementById('flyTo');
+const addPoly = document.getElementById('addPoly');
+const reset = document.getElementById('reset');
 
 const map = L.map('map', {
   zoomControl: false,
@@ -64,33 +66,37 @@ const startFlyPoint = L.marker(startPoint).addTo(map);
 const endFlyPoint = L.marker({ lat: 55.77, lng: 37.62 }).addTo(map);
 const heat = L.smoothPolygonsLayer().addTo(map);
 
-heat.clearAll();
-data[0].WindCm[0].polygons.forEach((polygon, index) => {
-  heat.addToScene({
-    polygon,
-    centralPoint: startPoint,
-    options: {
-      onMouseLeave: (e, rest) => {
-        // console.log('onMouseLeave', e, rest);
-      },
-
-      onClick: (e, rest) => {
-        console.log('onClick', e, rest);
-      },
-
-      onMouseEnter: (e, rest) => {
-        // console.log('onMouseEnter', e, rest);
-      },
-
-      onMouseMove: (e, rest) => {
-        // console.log('onMouseMove', e, rest);
-      },
+const addPolygon = () => {
+  heat.clearAll();
+  data[0].WindCm[0].polygons.forEach((polygon, index) => {
+    heat.addToScene({
+      polygon,
+      centralPoint: startPoint,
       options: {
-        fillColor: hexToRGBA('#07a2b9', 0.1 + 0.1 * index)
+        onMouseLeave: (e, rest) => {
+          // console.log('onMouseLeave', e, rest);
+        },
+
+        onClick: (e, rest) => {
+          console.log('onClick', e, rest);
+        },
+
+        onMouseEnter: (e, rest) => {
+          // console.log('onMouseEnter', e, rest);
+        },
+
+        onMouseMove: (e, rest) => {
+          // console.log('onMouseMove', e, rest);
+        },
+        options: {
+          fillColor: hexToRGBA('#07a2b9', 0.1 + 0.1 * index)
+        }
       }
-    }
+    });
   });
-});
+};
+
+addPolygon();
 
 let flyPoint = 'start';
 

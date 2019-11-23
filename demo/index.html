@@ -18,20 +18,27 @@
     #map {
       flex: 1;
     }
-    #flyTo {
+    .buttons {
       position: absolute;
       top: 24px;
       left: 24px;
-      padding: 12px 24px;
+      display: flex;
+      flex-direction: column;
+      background: #fff;
       z-index: 1000;
       border-radius: 4px;
+      overflow: hidden;
+    }
+    button {
+      padding: 12px 24px;
       border: none;
       cursor: pointer;
       outline: none;
-      transition: box-shadow 0.3s ease-in-out;
+      background: #fff;
+      transition: background 0.3s ease-in-out;
     }
-    #flyTo:hover {
-      box-shadow: 1px 1px 10px rgba(0, 0, 0, 0.2);
+    button:hover {
+      background: #ececec;
     }
   </style>
 
@@ -183,7 +190,11 @@
 
   <body>
     <div id="map"></div>
-    <button id="flyTo">flyTo</button>
+    <div class="buttons">
+      <button id="flyTo">flyTo</button>
+      <!--<button id="addPoly">addPoly</button>-->
+      <!--<button id="reset">reset</button>-->
+    </div>
     <a
       href="https://github.com/sanchezweezer/Leaflet.SmoothPolygons"
       class="github-corner"
