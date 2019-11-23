@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "",
   "keywords": [
-    "smooth"
+    "smooth", "polygons", "polygon",  "leaflet", "leaflet.js"
   ],
   "main": "index.js",
   "scripts": {
