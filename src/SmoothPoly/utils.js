@@ -2,8 +2,19 @@ import L from 'leaflet';
 
 const isNotProd = process.env.NODE_ENV !== 'production';
 
+/**
+ * Logger
+ * @param text: text to log
+ * @returns undefined
+ */
 const debug = (text) => isNotProd && console.log(text);
 
+/**
+ * Add throttling to function
+ * @param fn: paper path from polygon datafunc to debounce
+ * @param ms: debounce time
+ * @returns throttled function
+ */
 const debounce = (fn, ms = 0) => {
   let timeoutId;
   return function(...args) {
@@ -12,6 +23,11 @@ const debounce = (fn, ms = 0) => {
   };
 };
 
+/**
+ * Paper path takes to draw on canvas (after default render, to add some effects from paper.js)
+ * @param path: paper path from polygon data
+ * @returns undefined
+ */
 const defaultDrawFunc = ({ path }) => {
   path.smooth();
 
