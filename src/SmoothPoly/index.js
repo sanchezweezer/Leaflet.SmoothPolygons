@@ -370,7 +370,7 @@ L.SmoothPolygonsLayer = (L.Layer ? L.Layer : L.Class).extend({
     const paddingTranslate = (1 - this.zoomScale) * this.paddingSize;
 
     debug(
-      `!? scale: ${this.zoomScale}, padding: ${paddingTranslate}, newPos: ${newPos}, center: ${center}, ${this.canvasOffset}`
+      `scale: ${this.zoomScale}, padding: ${paddingTranslate}, newPos: ${newPos}, center: ${center}, ${this.canvasOffset}`
     );
 
     const newOriginPosition = newPos.add({ x: paddingTranslate, y: paddingTranslate });
@@ -424,8 +424,8 @@ L.SmoothPolygonsLayer.getPolygonsBounds = function() {
 /**
  * Adds smooth polygons to the leaflet
  */
-L.smoothPolygonsLayer = function(latlngs, options) {
-  return new L.SmoothPolygonsLayer(latlngs, options);
+L.smoothPolygonsLayer = function() {
+  return new L.SmoothPolygonsLayer();
 };
 
 export default L.SmoothPolygonsLayer;
