@@ -3,7 +3,11 @@
   "version": "1.0.0",
   "description": "",
   "keywords": [
-    "smooth", "polygons", "polygon",  "leaflet", "leaflet.js"
+    "smooth",
+    "polygons",
+    "polygon",
+    "leaflet",
+    "leaflet.js"
   ],
   "main": "index.js",
   "scripts": {
@@ -39,7 +43,7 @@
     "prettier": "^1.19.1",
     "style-loader": "^1.0.0",
     "url-loader": "^2.2.0",
-    "webpack": "^4.41.2",
+    "webpack": "^4.41.5",
     "webpack-cli": "^3.3.10",
     "webpack-dev-server": "^3.9.0"
   }
