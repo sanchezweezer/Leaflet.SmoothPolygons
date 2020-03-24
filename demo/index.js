@@ -5,7 +5,6 @@ import 'leaflet/dist/leaflet.css';
 import '../src';
 import('./config').then((defaultData) => {
   const { data } = defaultData;
-  // import { data } from './config';
 
   delete L.Icon.Default.prototype._getIconUrl;
 
