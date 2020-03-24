@@ -1,5 +1,5 @@
 {
-  "name": "Leaflet.Smoothpolygons",
+  "name": "leaflet.smoothpolygons",
   "version": "0.1.0",
   "description": "Leaflet.js canvas layer with Paper.js vector smooth polygons",
   "keywords": [

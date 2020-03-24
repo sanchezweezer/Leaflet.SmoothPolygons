@@ -3,6 +3,8 @@
 A simple and fast [Leaflet](http://leafletjs.com) canvas smooth polygons plugin.
 Uses [paperJS](http://paperjs.org/) under the hood to draw paths on canvas.
 
+And we support flyTo event =)
+
 ## Demo
 
 - [Smooth polygons demo &rarr;](https://sanchezweezer.github.io/Leaflet.SmoothPolygons/docs)
@@ -10,7 +12,7 @@ Uses [paperJS](http://paperjs.org/) under the hood to draw paths on canvas.
 ## Basic Usage
 
 ```shell script
-    npm i --save Leaflet.Smoothpolygons
+    npm i --save leaflet.smoothpolygons
 ```
 
 ```js
