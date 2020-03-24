@@ -33,7 +33,7 @@ To include the plugin, just use `leaflet-smooth-poly.js` from the `dist` folder:
 
 ## Requirements
 
-- [Leaflet](https://leafletjs.com/) ^1.5.1
+- [Leaflet](https://leafletjs.com/) ^1.5.0
 - [Leaflet-geometryutil](http://makinacorpus.github.io/Leaflet.GeometryUtil/) ^0.9.1
 - [Paper](http://paperjs.org/) ^0.12.3
 
