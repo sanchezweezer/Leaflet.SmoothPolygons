@@ -16,6 +16,11 @@ And we support flyTo event =)
 ```
 
 ```js
+import L from 'leaflet';
+import 'leaflet.smoothpolygons';
+
+const map = L.map(); // creates map
+
 const polygonLayer = L.smoothPolygonsLayer().addTo(map);
 
 const smoothPolygon = polygonLayer.addToScene({
