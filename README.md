@@ -9,6 +9,10 @@ Uses [paperJS](http://paperjs.org/) under the hood to draw paths on canvas.
 
 ## Basic Usage
 
+```shell script
+    npm i --save Leaflet.Smoothpolygons
+```
+
 ```js
 const polygonLayer = L.smoothPolygonsLayer().addTo(map);
 
