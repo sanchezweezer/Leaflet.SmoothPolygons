@@ -25,7 +25,7 @@
     "prepublish": "npm run build"
   },
   "husky": {
-    "precommit": "npm run env; git add .docs"
+    "precommit": "npm run build; git add .docs"
   },
   "repository": {
     "type": "git",
