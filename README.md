@@ -5,7 +5,7 @@ Uses [paperJS](http://paperjs.org/) under the hood to draw paths on canvas.
 
 ## Demo
 
-- [Smooth polygons demo &rarr;](http://sanchezweezer.github.io/Leaflet.SmoothPolygons/demo)
+- [Smooth polygons demo &rarr;](https://sanchezweezer.github.io/Leaflet.SmoothPolygons/docs)
 
 ## Basic Usage
 
